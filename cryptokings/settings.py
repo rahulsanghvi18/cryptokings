@@ -18,7 +18,12 @@ import logging
 import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
-logging.basicConfig(filename='cryptokings.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+import os
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+logging.basicConfig(filename=os.path.join(BASE_DIR, 'cryptokings.log'), level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 sentry_logging = LoggingIntegration(
     level=logging.INFO,        # Capture info and above as breadcrumbs
@@ -31,9 +36,6 @@ sentry_sdk.init(
     integrations=[sentry_logging, DjangoIntegration()]
 )
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -42,7 +44,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '^-tx-6$daglom-jq$1r51pwxzr@-xjj(b)&(62n&rz@9dk3+z&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", cast=bool)
 
 ALLOWED_HOSTS = []
 
@@ -138,3 +140,8 @@ STATIC_URL = '/static/'
 
 BINANCE_KEY = config("BINANCE_KEY")
 BINANCE_SECRET = config("BINANCE_SECRET")
+TELEGRAM_ID = config("TELEGRAM_ID", cast=int)
+TELEGRAM_HASH = config("TELEGRAM_HASH", cast=str)
+TELEGRAM_GROUP_LINK = config("TELEGRAM_GROUP_LINK", cast=str)
+
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", cast=str)

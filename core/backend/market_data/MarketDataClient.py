@@ -1,14 +1,10 @@
-import datetime
-
-import pytz
-
 if __name__ == "__main__":
     import core.common.django_settings
 
 from binance.client import Client
 from cryptokings.settings import BINANCE_KEY, BINANCE_SECRET
 from core.models import Instrument
-import pprint
+import logging
 import datetime as dt
 import pandas as pd
 
@@ -28,14 +24,18 @@ class MarketDataClient:
     def __init__(self):
         self.client = Client(BINANCE_KEY, BINANCE_SECRET)
 
+    # run every night at 12 am
     def update_instruments(self):
+        logging.info("Updating Instruments")
         symbols = self.client.get_exchange_info().get("symbols", [])
         symbols = [x.get("symbol") for x in symbols if x.get("quoteAsset") == "USDT"]
         for x in symbols:
             Instrument.objects.get_or_create(symbol=x)
         return True
 
+    # run every night at 12 am
     def update_volumes(self):
+        logging.info("Updating Volume")
         response = self.client.get_ticker()
         for x in response:
             symbol = x.get("symbol")
@@ -48,6 +48,7 @@ class MarketDataClient:
         return True
 
     def get_klines(self, instrument: Instrument, interval, limit=None):
+        logging.info("In get_klines")
         data = self.client.get_klines(symbol=instrument.symbol, interval=interval, limit=limit)
         objs = []
         for x in data:
@@ -62,6 +63,7 @@ class MarketDataClient:
         return pd.DataFrame(objs)
 
     def get_historical_klines(self, instrument: Instrument, interval, start_date: dt.datetime, end_date: dt.datetime):
+        logging.info("In get_historical_klines")
         data = self.client.get_historical_klines(symbol=instrument.symbol, interval=interval, start_str=str(start_date), end_str=str(end_date))
         objs = []
         for x in data:
@@ -89,6 +91,13 @@ class MarketDataClient:
         df = df[df < now]
         return df.tolist()[-1]
 
+    def get_prev_day_hl(self, instrument):
+        yestarday = dt.date.today() - dt.timedelta(days=1)
+        start_date = dt.datetime(yestarday.year, yestarday.month, yestarday.day)
+        end_date = dt.datetime(yestarday.year, yestarday.month, yestarday.day, 23, 59, 59)
+        x = self.get_historical_klines(instrument, self.client.KLINE_INTERVAL_1DAY, start_date, end_date)
+        return x.iloc[0]["high"], x.iloc[0]["low"]
+
     # returns tuple (high, low)
     def get_prev_week_hl(self, instrument: Instrument):
         start_date = self.get_previous_week()
@@ -106,7 +115,7 @@ class MarketDataClient:
 
     # returns r5, r4, r3, r2, r1, pivot, s1, s2, s3, s4, s5
     def get_today_pivots(self, instrument: Instrument):
-        date = datetime.date.today() - dt.timedelta(days=1)
+        date = dt.date.today() - dt.timedelta(days=1)
         start_date = dt.datetime(date.year, date.month, date.day)
         end_date = dt.datetime(date.year, date.month, date.day, 23, 59, 59)
         x = self.get_historical_klines(instrument, self.client.KLINE_INTERVAL_1DAY, start_date, end_date)
@@ -131,14 +140,17 @@ class MarketDataClient:
 
 
     def get_all_support_resistances(self, instrument: Instrument):
-        prev_month_high, prev_month_low = self.get_prev_week_hl(instrument)
+        prev_month_high, prev_month_low = self.get_prev_month_hl(instrument)
         prev_week_high, prev_week_low = self.get_prev_week_hl(instrument)
+        prev_day_high, prev_day_low = self.get_prev_day_hl(instrument)
         r5, r4, r3, r2, r1, pivot, s1, s2, s3, s4, s5 = self.get_today_pivots(instrument)
         return {
-            "prev_month_high": prev_week_high,
+            "prev_month_high": prev_month_high,
             "prev_month_low": prev_month_low,
             "prev_week_high": prev_week_high,
             "prev_week_low": prev_week_low,
+            "prev_day_high": prev_day_high,
+            "prev_day_low": prev_day_low,
             "pivot": pivot,
             "s1": s1,
             "s2": s2,
@@ -153,10 +165,11 @@ class MarketDataClient:
         }
 
 
-
 if __name__ == "__main__":
-    instrument = Instrument.objects.get(symbol='BTCUSDT')
+    # instrument = Instrument.objects.get(symbol='BTCUSDT')
     obj = MarketDataClient.get_instance()
     # print(obj.get_prev_month_hl(instrument))
     # print(obj.get_today_pivots(instrument))
-    pprint.pprint(obj.get_all_support_resistances(instrument))
+    # pprint.pprint(obj.get_all_support_resistances(instrument))
+    obj.update_instruments()
+    obj.update_volumes()
