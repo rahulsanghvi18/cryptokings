@@ -63,39 +63,39 @@ class CPR:
             ema10_bullish_crossover = (df["close"] > df["ema10"]) & (df.shift(1)["close"] < df["ema10"])
             ema10_bearish_crossover = (df["close"] < df["ema10"]) & (df.shift(1)["close"] > df["ema10"])
             ema20_bullish_crossover = (df["close"] > df["ema20"]) & (df.shift(1)["close"] < df["ema20"])
-            ema20_bearish_crossover = (df["close"] > df["ema20"]) & (df.shift(1)["close"] < df["ema20"])
+            ema20_bearish_crossover = (df["close"] < df["ema20"]) & (df.shift(1)["close"] > df["ema20"])
 
             if ema10_bullish_crossover[len(ema10_bullish_crossover) - 1]:
                 value = df["ema10"].iloc[-1]
-                instrument_message += ("EMA 10 : " + " BULLISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += ("**EMA 10 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
             elif ema10_bearish_crossover[len(ema10_bearish_crossover) - 1]:
                 value = df["ema10"].iloc[-1]
-                instrument_message += ("EMA 10 : " + " BEARISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += ("**EMA 10 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
 
             if ema20_bullish_crossover[len(ema20_bullish_crossover) - 1]:
                 value = df["ema20"].iloc[-1]
-                instrument_message += ("EMA 20 : " + " BULLISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += ("**EMA 20 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
             elif ema20_bearish_crossover[len(ema20_bearish_crossover) - 1]:
                 value = df["ema20"].iloc[-1]
-                instrument_message += ("EMA 20 : " + " BEARISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += ("**EMA 20 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
 
 
             if trendcrossover:
-                instrument_message += 'TREND : ' + "Trend has Turned +ve keep an eye!\n"
+                instrument_message += '**TREND : ' + "Trend has Turned +ve keep an eye!**\n\n"
             elif df["trending"].iloc[-1]:
-                instrument_message += 'TREND : ' + "Positive!\n"
+                instrument_message += '**TREND : ' + "Positive!**\n\n"
 
             for key, value in instrument.cprsystem.items():
                 bullish_crossover = (df["close"] > value) & (df.shift(1)["close"] < value)
                 bearish_crossover = (df["close"] < value) & (df.shift(1)["close"] > value)
 
                 if bullish_crossover[len(bullish_crossover) - 1]:
-                    instrument_message += (key + " : " + " BULLISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                    instrument_message += ("**" + key + " : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
                 elif bearish_crossover[len(bearish_crossover) - 1]:
-                    instrument_message += (key + " : " + " BEARISH CROSSOVER\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                    instrument_message += ("**" + key + " : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
 
             if instrument_message != "":
-                instrument_message = 'SYMBOL: ' + instrument.symbol + '\n\n' + "UTC TIME : " + str(df["date_time"].iloc[-1]) + "\n" + instrument_message
+                instrument_message = '**SYMBOL: ' + instrument.symbol + '\n\n' + "UTC TIME : " + str(df["date_time"].iloc[-1]) + "**\n\n" + instrument_message
                 instrument_message += "\n===========================\n"
                 message += instrument_message
 
