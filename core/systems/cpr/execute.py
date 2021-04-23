@@ -36,16 +36,35 @@ class CPR:
             x.cprsystem = self.client.get_all_support_resistances(x)
             message += x.symbol + "\n"
             x.save()
-        Handler.get_instance().send_all_subscribers(message)
+
+        Handler.get_instance().send_all_subscribers(message, Handler.get_instance().spot_group)
+        Handler.get_instance().send_all_subscribers(message, Handler.get_instance().futures_group)
 
 
     # run periodically
     def check_signals(self):
         logging.info("Checking Signals")
+
+        objs = []
+        for instrument in Instrument.objects.filter(type__type="SPOT").order_by("-volume")[:self.no_top_coins]:
+            objs.append(instrument)
+
+        self.analyse(objs, Handler.get_instance().spot_group)
+
+        objs = []
+        for instrument in Instrument.objects.filter(type__type="SPOT").order_by("-volume")[:self.no_top_coins]:
+            try:
+                x = Instrument.objects.get(symbol=instrument.symbol, type__type="FUTURES")
+                objs.append(x)
+            except:
+                pass
+        self.analyse(objs, Handler.get_instance().futures_group)
+
+    def analyse(self, instruments, contact):
         timeperiod = 13
         message = ""
 
-        for instrument in Instrument.objects.order_by("-volume")[:self.no_top_coins]:
+        for instrument in instruments:
             instrument_message = ""
             df = self.client.get_klines(instrument, self.client.client.KLINE_INTERVAL_15MINUTE, limit=300)
             df = df.iloc[:len(df) - 1]
@@ -67,18 +86,25 @@ class CPR:
 
             if ema10_bullish_crossover[len(ema10_bullish_crossover) - 1]:
                 value = df["ema10"].iloc[-1]
-                instrument_message += ("**EMA 10 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += (
+                            "**EMA 10 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                        close_value) + "\n\n")
             elif ema10_bearish_crossover[len(ema10_bearish_crossover) - 1]:
                 value = df["ema10"].iloc[-1]
-                instrument_message += ("**EMA 10 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += (
+                            "**EMA 10 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                        close_value) + "\n\n")
 
             if ema20_bullish_crossover[len(ema20_bullish_crossover) - 1]:
                 value = df["ema20"].iloc[-1]
-                instrument_message += ("**EMA 20 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                instrument_message += (
+                            "**EMA 20 : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                        close_value) + "\n\n")
             elif ema20_bearish_crossover[len(ema20_bearish_crossover) - 1]:
                 value = df["ema20"].iloc[-1]
-                instrument_message += ("**EMA 20 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
-
+                instrument_message += (
+                            "**EMA 20 : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                        close_value) + "\n\n")
 
             if trendcrossover:
                 instrument_message += '**TREND : ' + "Trend has Turned +ve keep an eye!**\n\n"
@@ -90,17 +116,22 @@ class CPR:
                 bearish_crossover = (df["close"] < value) & (df.shift(1)["close"] > value)
 
                 if bullish_crossover[len(bullish_crossover) - 1]:
-                    instrument_message += ("**" + key + " : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                    instrument_message += (
+                                "**" + key + " : " + " BULLISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                            close_value) + "\n\n")
                 elif bearish_crossover[len(bearish_crossover) - 1]:
-                    instrument_message += ("**" + key + " : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(close_value) + "\n\n")
+                    instrument_message += (
+                                "**" + key + " : " + " BEARISH CROSSOVER**\n" + "value : " + str(value) + " close : " + str(
+                            close_value) + "\n\n")
 
             if instrument_message != "":
-                instrument_message = '**SYMBOL: ' + instrument.symbol + '\n\n' + "UTC TIME : " + str(df["date_time"].iloc[-1]) + "**\n\n" + instrument_message
+                instrument_message = '**SYMBOL: ' + instrument.symbol + '\n\n' + "UTC TIME : " + str(
+                    df["date_time"].iloc[-1]) + "**\n\n" + instrument_message
                 instrument_message += "\n===========================\n"
                 message += instrument_message
 
         if message != "":
-            Handler.get_instance().send_all_subscribers(message)
+            Handler.get_instance().send_all_subscribers(contact, message)
 
 
 if __name__ == "__main__":

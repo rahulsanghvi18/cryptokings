@@ -3,7 +3,7 @@ if __name__ == "__main__":
 
 from binance.client import Client
 from cryptokings.settings import BINANCE_KEY, BINANCE_SECRET
-from core.models import Instrument
+from core.models import Instrument, InstrumentType
 import logging
 import datetime as dt
 import pandas as pd
@@ -26,21 +26,23 @@ class MarketDataClient:
 
     # run every night at 12 am
     def update_instruments(self):
+        instrument_type =InstrumentType.objects.get(type="SPOT")
         logging.info("Updating Instruments")
         symbols = self.client.get_exchange_info().get("symbols", [])
         symbols = [x.get("symbol") for x in symbols if x.get("quoteAsset") == "USDT"]
         for x in symbols:
-            Instrument.objects.get_or_create(symbol=x)
+            Instrument.objects.get_or_create(symbol=x, type=instrument_type)
         return True
 
     # run every night at 12 am
     def update_volumes(self):
         logging.info("Updating Volume")
+        instrument_type = InstrumentType.objects.get(type="SPOT")
         response = self.client.get_ticker()
         for x in response:
             symbol = x.get("symbol")
             try:
-                instrument = Instrument.objects.get(symbol=symbol)
+                instrument = Instrument.objects.get(symbol=symbol, type=instrument_type)
                 instrument.volume = x.get("quoteVolume")
                 instrument.save()
             except:
@@ -49,7 +51,11 @@ class MarketDataClient:
 
     def get_klines(self, instrument: Instrument, interval, limit=None):
         logging.info("In get_klines")
-        data = self.client.get_klines(symbol=instrument.symbol, interval=interval, limit=limit)
+        if instrument.type.type == "SPOT":
+            data = self.client.get_klines(symbol=instrument.symbol, interval=interval, limit=limit)
+        elif instrument.type.type == "FUTURES":
+            data = self.client.futures_klines(symbol=instrument.symbol, interval=interval, limit=limit)
+
         objs = []
         for x in data:
             temp = {}
@@ -76,6 +82,7 @@ class MarketDataClient:
             temp["volume"] = float(x[7])
             objs.append(temp)
         return pd.DataFrame(objs)
+
 
     def get_previous_week(self):
         now = dt.datetime.utcnow()
@@ -165,11 +172,30 @@ class MarketDataClient:
         }
 
 
+    # futures section #####################################
+
+    def update_futures_instrument(self):
+        logging.info("Updating Futures Instruments")
+        instrument_type = InstrumentType.objects.get(type="FUTURES")
+        symbols = self.client.futures_exchange_info().get("symbols", [])
+        symbols = [x.get("symbol") for x in symbols if x.get("contractType") == "PERPETUAL" and x.get("quoteAsset") == "USDT"]
+        for x in symbols:
+            Instrument.objects.get_or_create(symbol=x, type=instrument_type)
+        return True
+
+
 if __name__ == "__main__":
+    import pprint
     # instrument = Instrument.objects.get(symbol='BTCUSDT')
     obj = MarketDataClient.get_instance()
     # print(obj.get_prev_month_hl(instrument))
     # print(obj.get_today_pivots(instrument))
     # pprint.pprint(obj.get_all_support_resistances(instrument))
-    obj.update_instruments()
-    obj.update_volumes()
+    # obj.update_instruments()
+    # obj.update_volumes()
+    # obj.update_futures_instrument()
+
+    # instrument = Instrument.objects.get(symbol="BTCUSDT", type__type="FUTURES")
+    # print(obj.get_klines(instrument, interval=obj.client.KLINE_INTERVAL_15MINUTE, limit=200))
+
+
