@@ -2,7 +2,7 @@
 
 source ~/envs/webdevDjango/bin/activate
 export PYTHONPATH=$PYTHONPATH:"$(dirname "$(pwd)")"
-
+sudo pg_ctlcluster 12 main start
 
 source $PWD/bin/run.sh &
 source $PWD/bin/redis.sh &

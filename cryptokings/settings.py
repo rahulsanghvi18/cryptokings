@@ -46,7 +46,7 @@ SECRET_KEY = '^-tx-6$daglom-jq$1r51pwxzr@-xjj(b)&(62n&rz@9dk3+z&'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
