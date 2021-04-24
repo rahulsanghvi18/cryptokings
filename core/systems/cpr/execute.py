@@ -13,7 +13,7 @@ class CPR:
 
     def __init__(self):
         self.client = MarketDataClient.get_instance()
-        self.no_top_coins = 20
+        self.no_top_coins = 10
 
     @staticmethod
     def get_instance():
@@ -31,25 +31,29 @@ class CPR:
             x.cprsystem = {}
             x.save()
 
-        message = "CPR Tracking System Updated\n\n"
-        for x in Instrument.objects.order_by("-volume")[:self.no_top_coins]:
-            x.cprsystem = self.client.get_all_support_resistances(x)
-            message += x.symbol + "\n"
-            x.save()
+        message_spot = "CPR SPOT Tracking System Updated\n\n"
+        message_futures = "CPR Futures Tracking System Updated\n\n"
 
-        Handler.get_instance().send_all_subscribers(message, Handler.get_instance().spot_group)
-        Handler.get_instance().send_all_subscribers(message, Handler.get_instance().futures_group)
+        for instrument in Instrument.objects.order_by("-volume")[:self.no_top_coins]:
+            instrument.cprsystem = self.client.get_all_support_resistances(instrument)
+            message_spot += instrument.symbol + "\n"
+            instrument.save()
+
+            try:
+                x = Instrument.objects.get(symbol=instrument.symbol, type__type="FUTURES")
+                x.cprsystem = self.client.get_all_support_resistances(instrument)
+                message_futures += x.symbol + "\n"
+                x.save()
+            except:
+                pass
+
+        Handler.get_instance().send_all_subscribers(Handler.get_instance().spot_group, message_spot)
+        Handler.get_instance().send_all_subscribers(Handler.get_instance().futures_group, message_futures)
 
 
     # run periodically
     def check_signals(self):
         logging.info("Checking Signals")
-
-        objs = []
-        for instrument in Instrument.objects.filter(type__type="SPOT").order_by("-volume")[:self.no_top_coins]:
-            objs.append(instrument)
-
-        self.analyse(objs, Handler.get_instance().spot_group)
 
         objs = []
         for instrument in Instrument.objects.filter(type__type="SPOT").order_by("-volume")[:self.no_top_coins]:
@@ -59,6 +63,15 @@ class CPR:
             except:
                 pass
         self.analyse(objs, Handler.get_instance().futures_group)
+
+        objs = []
+        for instrument in Instrument.objects.filter(type__type="SPOT").order_by("-volume")[:self.no_top_coins]:
+            objs.append(instrument)
+
+        self.analyse(objs, Handler.get_instance().spot_group)
+
+
+
 
     def analyse(self, instruments, contact):
         timeperiod = 13

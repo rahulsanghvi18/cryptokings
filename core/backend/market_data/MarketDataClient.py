@@ -70,7 +70,12 @@ class MarketDataClient:
 
     def get_historical_klines(self, instrument: Instrument, interval, start_date: dt.datetime, end_date: dt.datetime):
         logging.info("In get_historical_klines")
-        data = self.client.get_historical_klines(symbol=instrument.symbol, interval=interval, start_str=str(start_date), end_str=str(end_date))
+        if instrument.type.type == "SPOT":
+            data = self.client.get_historical_klines(symbol=instrument.symbol, interval=interval, start_str=str(start_date), end_str=str(end_date))
+        elif instrument.type.type == "FUTURES":
+            data = self.get_klines(instrument, interval)
+            return data[(data["date_time"] >= start_date) & (data["date_time"] <= end_date)]
+
         objs = []
         for x in data:
             temp = {}
@@ -81,7 +86,9 @@ class MarketDataClient:
             temp["close"] = float(x[4])
             temp["volume"] = float(x[7])
             objs.append(temp)
+
         return pd.DataFrame(objs)
+
 
 
     def get_previous_week(self):
@@ -186,7 +193,7 @@ class MarketDataClient:
 
 if __name__ == "__main__":
     import pprint
-    # instrument = Instrument.objects.get(symbol='BTCUSDT')
+    instrument = Instrument.objects.get(symbol='BTCUSDT', type__type="FUTURES")
     obj = MarketDataClient.get_instance()
     # print(obj.get_prev_month_hl(instrument))
     # print(obj.get_today_pivots(instrument))
@@ -197,5 +204,7 @@ if __name__ == "__main__":
 
     # instrument = Instrument.objects.get(symbol="BTCUSDT", type__type="FUTURES")
     # print(obj.get_klines(instrument, interval=obj.client.KLINE_INTERVAL_15MINUTE, limit=200))
+
+    print(obj.get_historical_klines(instrument, obj.client.KLINE_INTERVAL_15MINUTE, dt.datetime(2021, 4, 24, 4), dt.datetime(2021, 4, 24, 5)))
 
 
