@@ -1,0 +1,35 @@
+Crypto kings Spot & Futures Is an automated Telegram bot which tracks top n (10 in this case) coins and its Futures contracts by volume real-time and provides alerts every 15 mins on a telegram group whenever the following conditions are meet -
+
+Bullish & Bearish 15 min candle crossover on
+10 & 20 EMA
+Pivot
+Support 1 to 4
+Resistance 1 to 4
+Previous Day High & Low
+Previous Week High and Low
+Previous Month High and Low
+The Project Uses Django ORM for database Operations.
+Periodic operations like instrument updating and real time checking of crossover is done using crontab scheduling.
+Telethon API is used to send messages on the telegram group.
+
+
+Installation Process ->
+1. install all python dependencies using the command
+    ->    pip install -r requirements.txt
+
+2. Setup an .env file in the root folder which has the following info
+
+    DATABASE_URL=postgresql://username:password@host:port/db_name
+
+    BINANCE_KEY=your binance api Key
+    BINANCE_SECRET=your binance api secret
+
+    TELEGRAM_ID=your telegram account id (how to get this -> https://sendpulse.com/knowledge-base/chatbot/create-telegram-chatbot)
+    TELEGRAM_HASH=your telegram account hash
+    TELEGRAM_GROUP_LINK_SPOT=spot group link
+    TELEGRAM_GROUP_LINK_FUTURES=futures group link
+    CELERY_BROKER_URL=redis://localhost:6379
+
+    DEBUG=False
+
+3. from the root folder run ./bin/main.sh
