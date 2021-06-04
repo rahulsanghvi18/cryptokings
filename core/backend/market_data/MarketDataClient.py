@@ -193,18 +193,18 @@ class MarketDataClient:
 
 if __name__ == "__main__":
     import pprint
-    instrument = Instrument.objects.get(symbol='BTCUSDT', type__type="FUTURES")
+    # instrument = Instrument.objects.get(symbol='BTCUSDT', type__type="FUTURES")
     obj = MarketDataClient.get_instance()
     # print(obj.get_prev_month_hl(instrument))
     # print(obj.get_today_pivots(instrument))
     # pprint.pprint(obj.get_all_support_resistances(instrument))
-    # obj.update_instruments()
-    # obj.update_volumes()
-    # obj.update_futures_instrument()
+    obj.update_instruments()
+    obj.update_volumes()
+    obj.update_futures_instrument()
 
     # instrument = Instrument.objects.get(symbol="BTCUSDT", type__type="FUTURES")
     # print(obj.get_klines(instrument, interval=obj.client.KLINE_INTERVAL_15MINUTE, limit=200))
 
-    print(obj.get_historical_klines(instrument, obj.client.KLINE_INTERVAL_15MINUTE, dt.datetime(2021, 4, 24, 4), dt.datetime(2021, 4, 24, 5)))
+    # print(obj.get_historical_klines(instrument, obj.client.KLINE_INTERVAL_15MINUTE, dt.datetime(2021, 4, 24, 4), dt.datetime(2021, 4, 24, 5)))
 
 
